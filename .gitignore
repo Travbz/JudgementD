@@ -1,0 +1,4 @@
+build/
+agent
+*.exe
+.DS_Store
