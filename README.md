@@ -1,17 +1,17 @@
-# agent
+# JudgementD
 
-Reference agent implementation for the sandbox system. Reads a structured task from stdin, calls an LLM (Anthropic Claude via the [llm-proxy](https://github.com/Travbz/llm-proxy)), executes MCP tool calls, iterates until done, and writes structured output to stdout. Follows the platform's agent contract so it works inside any sandbox provisioned by the [control-plane](https://github.com/Travbz/control-plane).
+Reference agent implementation for the sandbox system. Reads a structured task from stdin, calls an LLM (Anthropic Claude via [GhostProxy](https://github.com/Travbz/GhostProxy)), executes MCP tool calls, iterates until done, and writes structured output to stdout. Follows the platform's agent contract so it works inside any sandbox provisioned by [CommandGrid](https://github.com/Travbz/CommandGrid).
 
 ## System overview
 
 | Repo | What it does |
 |---|---|
-| **[control-plane](https://github.com/Travbz/control-plane)** | Orchestrator -- config, secrets, provisioning, tools, memory |
-| **[llm-proxy](https://github.com/Travbz/llm-proxy)** | Credential-injecting LLM reverse proxy with token metering |
-| **[sandbox-image](https://github.com/Travbz/sandbox-image)** | Container image -- entrypoint, env stripping, privilege drop |
+| **[CommandGrid](https://github.com/Travbz/CommandGrid)** | Orchestrator -- config, secrets, provisioning, tools, memory |
+| **[GhostProxy](https://github.com/Travbz/GhostProxy)** | Credential-injecting LLM reverse proxy with token metering |
+| **[RootFS](https://github.com/Travbz/RootFS)** | Container image -- entrypoint, env stripping, privilege drop |
 | **[api-gateway](https://github.com/Travbz/api-gateway)** | Customer-facing REST API -- job submission, SSE streaming, billing |
-| **[tools](https://github.com/Travbz/tools)** | MCP tool monorepo -- spec, reference tools |
-| **[agent](https://github.com/Travbz/agent)** | This repo -- reference agent |
+| **[ToolCore](https://github.com/Travbz/ToolCore)** | MCP tool monorepo -- spec, reference tools |
+| **[JudgementD](https://github.com/Travbz/JudgementD)** | This repo -- reference agent |
 
 ---
 
@@ -63,9 +63,9 @@ A JSON object written to stdout when done:
 
 | Variable | Source | Purpose |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | control-plane (session token) | Auth for LLM calls |
-| `ANTHROPIC_BASE_URL` | control-plane (proxy URL) | Routes calls through llm-proxy |
-| `TOOL_ENDPOINTS` | control-plane | Comma-separated `name=url` pairs |
+| `ANTHROPIC_API_KEY` | CommandGrid (session token) | Auth for LLM calls |
+| `ANTHROPIC_BASE_URL` | CommandGrid (proxy URL) | Routes calls through GhostProxy |
+| `TOOL_ENDPOINTS` | CommandGrid | Comma-separated `name=url` pairs |
 
 ---
 
@@ -114,7 +114,7 @@ The agent discovers tools from the `tools` array in the task input. Each entry i
 ## Building
 
 ```bash
-go build -o agent .
+go build -o judgementd .
 ```
 
 No external dependencies -- the agent uses only the standard library and raw HTTP for both LLM calls and tool calls.
@@ -127,7 +127,7 @@ No external dependencies -- the agent uses only the standard library and raw HTT
 echo '{"task_id":"test","prompt":"Say hello"}' | \
   ANTHROPIC_API_KEY=sk-ant-... \
   ANTHROPIC_BASE_URL=http://localhost:8090 \
-  ./agent
+  ./judgementd
 ```
 
 In production, the control plane handles all of this -- the agent binary just needs to be present in the sandbox image.
@@ -137,7 +137,7 @@ In production, the control plane handles all of this -- the agent binary just ne
 ## Project structure
 
 ```
-agent/
+JudgementD/
 ├── main.go       # agent loop, LLM client, tool execution, contract types
 └── go.mod
 ```
